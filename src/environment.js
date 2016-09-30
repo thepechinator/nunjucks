@@ -333,10 +333,14 @@ var Context = Obj.extend({
         this.env = env || new Environment();
 
         // Make a duplicate of ctx
-        this.ctx = {};
-        for(var k in ctx) {
-            if(ctx.hasOwnProperty(k)) {
-                this.ctx[k] = ctx[k];
+        if (env.opts.cloneContextFunc) {
+            this.ctx = env.opts.cloneContextFunc(ctx);
+        } else {
+            this.ctx = {};
+            for(var k in ctx) {
+                if(ctx.hasOwnProperty(k)) {
+                    this.ctx[k] = ctx[k];
+                }
             }
         }
 

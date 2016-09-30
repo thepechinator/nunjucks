@@ -778,10 +778,14 @@ var nunjucks =
 	        this.env = env || new Environment();
 
 	        // Make a duplicate of ctx
-	        this.ctx = {};
-	        for(var k in ctx) {
-	            if(ctx.hasOwnProperty(k)) {
-	                this.ctx[k] = ctx[k];
+	        if (env.opts.cloneContextFunc) {
+	            this.ctx = env.opts.cloneContextFunc(ctx);
+	        } else {
+	            this.ctx = {};
+	            for(var k in ctx) {
+	                if(ctx.hasOwnProperty(k)) {
+	                    this.ctx[k] = ctx[k];
+	                }
 	            }
 	        }
 
@@ -1194,9 +1198,12 @@ var nunjucks =
 
 	// Safari 6 and 6.1 for desktop, iPad, and iPhone are the only browsers that
 	// have WebKitMutationObserver but not un-prefixed MutationObserver.
-	// Must use `global` instead of `window` to work in both frames and web
+	// Must use `global` or `self` instead of `window` to work in both frames and web
 	// workers. `global` is a provision of Browserify, Mr, Mrs, or Mop.
-	var BrowserMutationObserver = global.MutationObserver || global.WebKitMutationObserver;
+
+	/* globals self */
+	var scope = typeof global !== "undefined" ? global : self;
+	var BrowserMutationObserver = scope.MutationObserver || scope.WebKitMutationObserver;
 
 	// MutationObservers are desirable because they have high priority and work
 	// reliably everywhere they are implemented.

@@ -50,8 +50,8 @@ var nunjucks =
 
 	var lib = __webpack_require__(1);
 	var env = __webpack_require__(2);
-	var Loader = __webpack_require__(15);
-	var loaders = __webpack_require__(14);
+	var Loader = __webpack_require__(16);
+	var loaders = __webpack_require__(15);
 	var precompile = __webpack_require__(3);
 
 	module.exports = {};
@@ -66,11 +66,11 @@ var nunjucks =
 	module.exports.compiler = __webpack_require__(7);
 	module.exports.parser = __webpack_require__(8);
 	module.exports.lexer = __webpack_require__(9);
-	module.exports.runtime = __webpack_require__(12);
+	module.exports.runtime = __webpack_require__(13);
 	module.exports.lib = lib;
 	module.exports.nodes = __webpack_require__(10);
 
-	module.exports.installJinjaCompat = __webpack_require__(18);
+	module.exports.installJinjaCompat = __webpack_require__(19);
 
 	// A single instance of an environment, since this is so commonly used
 
@@ -450,16 +450,16 @@ var nunjucks =
 	var lib = __webpack_require__(1);
 	var Obj = __webpack_require__(6);
 	var compiler = __webpack_require__(7);
-	var builtin_filters = __webpack_require__(13);
-	var builtin_loaders = __webpack_require__(14);
-	var runtime = __webpack_require__(12);
-	var globals = __webpack_require__(17);
+	var builtin_filters = __webpack_require__(14);
+	var builtin_loaders = __webpack_require__(15);
+	var runtime = __webpack_require__(13);
+	var globals = __webpack_require__(18);
 	var Frame = runtime.Frame;
 	var Template;
 
 	// Unconditionally load in this loader, even if no other ones are
 	// included (possible in the slim browser build)
-	builtin_loaders.PrecompiledLoader = __webpack_require__(16);
+	builtin_loaders.PrecompiledLoader = __webpack_require__(17);
 
 	// If the user is using the async API, *always* call it
 	// asynchronously even if the template was synchronous.
@@ -778,10 +778,14 @@ var nunjucks =
 	        this.env = env || new Environment();
 
 	        // Make a duplicate of ctx
-	        this.ctx = {};
-	        for(var k in ctx) {
-	            if(ctx.hasOwnProperty(k)) {
-	                this.ctx[k] = ctx[k];
+	        if (env.opts.cloneContextFunc) {
+	            this.ctx = env.opts.cloneContextFunc(ctx);
+	        } else {
+	            this.ctx = {};
+	            for(var k in ctx) {
+	                if(ctx.hasOwnProperty(k)) {
+	                    this.ctx[k] = ctx[k];
+	                }
 	            }
 	        }
 
@@ -1194,9 +1198,12 @@ var nunjucks =
 
 	// Safari 6 and 6.1 for desktop, iPad, and iPhone are the only browsers that
 	// have WebKitMutationObserver but not un-prefixed MutationObserver.
-	// Must use `global` instead of `window` to work in both frames and web
+	// Must use `global` or `self` instead of `window` to work in both frames and web
 	// workers. `global` is a provision of Browserify, Mr, Mrs, or Mop.
-	var BrowserMutationObserver = global.MutationObserver || global.WebKitMutationObserver;
+
+	/* globals self */
+	var scope = typeof global !== "undefined" ? global : self;
+	var BrowserMutationObserver = scope.MutationObserver || scope.WebKitMutationObserver;
 
 	// MutationObservers are desirable because they have high priority and work
 	// reliably everywhere they are implemented.
@@ -1417,11 +1424,11 @@ var nunjucks =
 
 	var lib = __webpack_require__(1);
 	var parser = __webpack_require__(8);
-	var transformer = __webpack_require__(11);
+	var transformer = __webpack_require__(12);
 	var nodes = __webpack_require__(10);
 	// jshint -W079
 	var Object = __webpack_require__(6);
-	var Frame = __webpack_require__(12).Frame;
+	var Frame = __webpack_require__(13).Frame;
 
 	// These are all the same for now, but shouldn't be passed straight
 	// through
@@ -4712,10 +4719,16 @@ var nunjucks =
 	    printNodes: printNodes
 	};
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ },
 /* 11 */
+/***/ function(module, exports) {
+
+	
+
+/***/ },
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4960,7 +4973,7 @@ var nunjucks =
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -5328,13 +5341,13 @@ var nunjucks =
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var lib = __webpack_require__(1);
-	var r = __webpack_require__(12);
+	var r = __webpack_require__(13);
 
 	function normalize(value, defaultValue) {
 	    if(value === null || value === undefined || value === false) {
@@ -5911,13 +5924,13 @@ var nunjucks =
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var Loader = __webpack_require__(15);
-	var PrecompiledLoader = __webpack_require__(16);
+	var Loader = __webpack_require__(16);
+	var PrecompiledLoader = __webpack_require__(17);
 
 	var WebLoader = Loader.extend({
 	    init: function(baseURL, opts) {
@@ -6013,7 +6026,7 @@ var nunjucks =
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -6052,12 +6065,12 @@ var nunjucks =
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var Loader = __webpack_require__(15);
+	var Loader = __webpack_require__(16);
 
 	var PrecompiledLoader = Loader.extend({
 	    init: function(compiledTemplates) {
@@ -6080,7 +6093,7 @@ var nunjucks =
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -6165,7 +6178,7 @@ var nunjucks =
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports) {
 
 	function installCompat() {
