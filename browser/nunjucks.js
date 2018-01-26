@@ -1,6 +1,15 @@
-/*! Browser bundle of nunjucks 2.4.2  */
-var nunjucks =
-/******/ (function(modules) { // webpackBootstrap
+/*! Browser bundle of nunjucks 2.5.2  */
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["nunjucks"] = factory();
+	else
+		root["nunjucks"] = factory();
+})(this, function() {
+return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 
@@ -730,6 +739,7 @@ var nunjucks =
 	        };
 
 	        app.set('view', NunjucksView);
+	        app.set('nunjucksEnv', this);
 	        return this;
 	    },
 
@@ -1434,7 +1444,9 @@ var nunjucks =
 	// through
 	var compareOps = {
 	    '==': '==',
+	    '===': '===',
 	    '!=': '!=',
+	    '!==': '!==',
 	    '<': '<',
 	    '>': '>',
 	    '<=': '<=',
@@ -2901,7 +2913,7 @@ var nunjucks =
 	                            importTok.colno);
 	        }
 
-	        var target = this.parsePrimary();
+	        var target = this.parseExpression();
 
 	        var withContext = this.parseWithContext();
 
@@ -2922,7 +2934,7 @@ var nunjucks =
 	            this.fail('parseFrom: expected from');
 	        }
 
-	        var template = this.parsePrimary();
+	        var template = this.parseExpression();
 
 	        if(!this.skipSymbol('import')) {
 	            this.fail('parseFrom: expected import',
@@ -3055,14 +3067,14 @@ var nunjucks =
 	        var tag = this.peekToken();
 	        var node;
 
-	        if(this.skipSymbol('if') || this.skipSymbol('elif')) {
+	        if(this.skipSymbol('if') || this.skipSymbol('elif') || this.skipSymbol('elseif')) {
 	            node = new nodes.If(tag.lineno, tag.colno);
 	        }
 	        else if(this.skipSymbol('ifAsync')) {
 	            node = new nodes.IfAsync(tag.lineno, tag.colno);
 	        }
 	        else {
-	            this.fail('parseIf: expected if or elif',
+	            this.fail('parseIf: expected if, elif, or elseif',
 	                      tag.lineno,
 	                      tag.colno);
 	        }
@@ -3070,10 +3082,11 @@ var nunjucks =
 	        node.cond = this.parseExpression();
 	        this.advanceAfterBlockEnd(tag.value);
 
-	        node.body = this.parseUntilBlocks('elif', 'else', 'endif');
+	        node.body = this.parseUntilBlocks('elif', 'elseif', 'else', 'endif');
 	        var tok = this.peekToken();
 
 	        switch(tok && tok.value) {
+	        case 'elseif':
 	        case 'elif':
 	            node.else_ = this.parseIf();
 	            break;
@@ -3367,7 +3380,7 @@ var nunjucks =
 	    },
 
 	    parseCompare: function() {
-	        var compareOps = ['==', '!=', '<', '>', '<=', '>='];
+	        var compareOps = ['==', '===', '!=', '!==', '<', '>', '<=', '>='];
 	        var expr = this.parseConcat();
 	        var ops = [];
 
@@ -4060,13 +4073,19 @@ var nunjucks =
 	        else if(delimChars.indexOf(cur) !== -1) {
 	            // We've hit a delimiter (a special char like a bracket)
 	            this.forward();
-	            var complexOps = ['==', '!=', '<=', '>=', '//', '**'];
+	            var complexOps = ['==', '===', '!=', '!==', '<=', '>=', '//', '**'];
 	            var curComplex = cur + this.current();
 	            var type;
 
 	            if(lib.indexOf(complexOps, curComplex) !== -1) {
 	                this.forward();
 	                cur = curComplex;
+
+	                // See if this is a strict equality/inequality comparator
+	                if(lib.indexOf(complexOps, curComplex + this.current()) !== -1) {
+	                    cur = curComplex + this.current();
+	                    this.forward();
+	                }
 	            }
 
 	            switch(cur) {
@@ -5184,8 +5203,8 @@ var nunjucks =
 	function suppressValue(val, autoescape) {
 	    val = (val !== undefined && val !== null) ? val : '';
 
-	    if(autoescape && typeof val === 'string') {
-	        val = lib.escape(val);
+	    if(autoescape && !(val instanceof SafeString)) {
+	        val = lib.escape(val.toString());
 	    }
 
 	    return val;
@@ -5462,14 +5481,19 @@ var nunjucks =
 	    },
 
 	    escape: function(str) {
-	        if(typeof str === 'string') {
-	            return r.markSafe(lib.escape(str));
+	        if(str instanceof r.SafeString) {
+	            return str;
 	        }
-	        return str;
+	        str = (str === null || str === undefined) ? '' : str;
+	        return r.markSafe(lib.escape(str.toString()));
 	    },
 
 	    safe: function(str) {
-	        return r.markSafe(str);
+	        if (str instanceof r.SafeString) {
+	            return str;
+	        }
+	        str = (str === null || str === undefined) ? '' : str;
+	        return r.markSafe(str.toString());
 	    },
 
 	    first: function(arr) {
@@ -5528,6 +5552,10 @@ var nunjucks =
 	            ) {
 	                // ECMAScript 2015 Maps and Sets
 	                return value.size;
+	            }
+	            if(lib.isObject(value) && !(value instanceof r.SafeString)) {
+	                // Objects (besides SafeStrings), non-primative Arrays
+	                return Object.keys(value).length;
 	            }
 	            return value.length;
 	        }
@@ -6340,4 +6368,6 @@ var nunjucks =
 
 
 /***/ }
-/******/ ]);
+/******/ ])
+});
+;
